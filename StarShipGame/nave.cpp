@@ -9,6 +9,7 @@
 #define right 77
 #define down 80
 
+
 void gotoxy(int x, int y){
 	HANDLE hCon;
 	hCon = GetStdHandle(STD_OUTPUT_HANDLE); // Obtenemos el control de la consola
@@ -127,7 +128,6 @@ int main(){
 		Sleep(30);
 		
 	}
-	
 	
 	return 0;
 }
