@@ -9,7 +9,9 @@
 #define right 77
 #define down 80
 
-
+/*
+Posicionar cursor
+*/
 void gotoxy(int x, int y){
 	HANDLE hCon;
 	hCon = GetStdHandle(STD_OUTPUT_HANDLE); // Obtenemos el control de la consola
@@ -23,6 +25,9 @@ void gotoxy(int x, int y){
 	SetConsoleCursorPosition(hCon, dwPos);
 }
 
+/*
+Ocultar cursor
+*/
 void hideCursor(){
 	HANDLE hCon;
 	hCon = GetStdHandle(STD_OUTPUT_HANDLE); // Obtenemos el control de la consola
@@ -41,15 +46,57 @@ Clase nave
 class Ship{
 	
 	int x,y; //Posición de la nave
+	int hp;
+	int lifes;
 	
 	public:
 		
-		Ship(int x, int y): x(x), y(y){}
+		Ship(int x, int y, int hp, int lifes): x(x), y(y), hp(hp), lifes(lifes){}
 		void printShip();
 		void deleteShip();
 		void moveShip();
+		void printHP();
+		void died();
 };
 
+/*
+Matar nave
+*/
+void Ship::died(){
+	if(hp == 0){
+		deleteShip();
+		gotoxy(x,y);
+		printf("   **   ");
+		gotoxy(x,y+1);
+		printf(" ****  ");
+		gotoxy(x,y+2);
+		printf("  **   ");
+		Sleep(200);
+		deleteShip();
+		gotoxy(x,y);
+		printf(" * ** * ");
+		gotoxy(x,y+1);
+		printf("  ****  ");
+		gotoxy(x,y+2);
+		printf(" * ** *  ");
+		Sleep(200);
+		deleteShip();
+		gotoxy(x,y);
+		printf(" *     ");
+		gotoxy(x,y+1);
+		printf(" *   ** ");
+		gotoxy(x,y+2);
+		printf("      *");
+		
+		deleteShip();
+		
+		printShip();
+	}
+}
+
+/*
+Pintar límites
+*/
 void printLimits(){
 	for(int i = 2; i < 78 ; i++){
 		gotoxy(i,3); printf("%c",205);
@@ -68,6 +115,31 @@ void printLimits(){
 	gotoxy(77,33); printf("%c", 188);
 }
 
+
+/*
+Pintar vida de la nave
+*/
+void Ship::printHP(){
+	
+	gotoxy(64,2);
+	printf("Hp:");
+	
+	gotoxy(50,2);
+	printf("Lifes: %d", lifes);
+	
+	gotoxy(70,2);
+	printf("       ");
+	
+	for(int i = 0; i <hp; i++){
+		gotoxy(70+i,2);
+		printf("%c",3);
+	}
+	
+}
+
+/*
+Pintar nave
+*/
 void Ship::printShip(){
 	
 	gotoxy(x,y);  	printf("  %c",30);
@@ -76,19 +148,32 @@ void Ship::printShip(){
 	
 }
 
+
+/*
+borrar nave
+*/
 void Ship::deleteShip(){
 	
-	gotoxy(x,y);  printf("      ",30);
-	gotoxy(x,y+1);  printf("      ",40,207,41);
-	gotoxy(x,y+2);  printf("      ",30,190,190,30);
+	gotoxy(x,y);  printf("       ",30);
+	gotoxy(x,y+1);  printf("       ",40,207,41);
+	gotoxy(x,y+2);  printf("       ",30,190,190,30);
 	
 }
 
+
+/*
+Mover nave
+*/
 void Ship::moveShip(){
+	printHP();
+	
 	if(kbhit()){
 			char key = getch(); //Tecla presionada
 			deleteShip();
 			//se evaluan los casos
+			if(key == 'e'){
+				hp--;
+			}
 			if(key == left && x>3){
 				x--;
 			}
@@ -114,8 +199,8 @@ Método main
 int main(){
 	
 	hideCursor();
-	printLimits();
-	Ship ship(38,30);
+	printLimits(); //Marco
+	Ship ship(38,30,3,3); //Inicialización de la nave
 	
 	ship.printShip();
 	
@@ -124,6 +209,11 @@ int main(){
 	while(!gameOver){
 		
 		ship.moveShip();
+		
+		if(ship.hp == 0){
+			ship.died();
+			ship.lifes--;
+		}
 		
 		Sleep(30);
 		
