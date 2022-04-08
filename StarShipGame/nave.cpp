@@ -3,12 +3,16 @@
 #include<stdio.h>
 #include<windows.h>
 #include<conio.h>
+#include<stdlib.h>
+#include<list>
 
 #define up 72
 #define left 75
 #define right 77
 #define down 80
 
+
+using namespace std;
 /*
 Posicionar cursor
 */
@@ -29,6 +33,7 @@ void gotoxy(int x, int y){
 Ocultar cursor
 */
 void hideCursor(){
+
 	HANDLE hCon;
 	hCon = GetStdHandle(STD_OUTPUT_HANDLE); // Obtenemos el control de la consola
 	
@@ -40,23 +45,33 @@ void hideCursor(){
 	SetConsoleCursorInfo(hCon, &cci);
 }
 
+
+
+
 /*
 Clase nave
 */
 class Ship{
 	
 	int x,y; //Posición de la nave
-	int hp;
-	int lifes;
+	int hp; //Corazones
+	int lifes; //Vidas
 	
 	public:
 		
 		Ship(int x, int y, int hp, int lifes): x(x), y(y), hp(hp), lifes(lifes){}
+		void setXY(int _x, int _y){x = _x; y = _y;};
+		int getLifes(){return lifes;};
+		int X(){return x;};
+		int Y(){return y;};
+		void decreaseHP(){hp--;};
+		
 		void printShip();
 		void deleteShip();
 		void moveShip();
 		void printHP();
 		void died();
+		
 };
 
 /*
@@ -87,8 +102,12 @@ void Ship::died(){
 		printf(" *   ** ");
 		gotoxy(x,y+2);
 		printf("      *");
-		
 		deleteShip();
+		
+		lifes--;
+		hp = 3;
+		
+		printHP();
 		
 		printShip();
 	}
@@ -121,11 +140,11 @@ Pintar vida de la nave
 */
 void Ship::printHP(){
 	
+	gotoxy(50,2);
+	printf("Lives: %d", lifes);
+	
 	gotoxy(64,2);
 	printf("Hp:");
-	
-	gotoxy(50,2);
-	printf("Lifes: %d", lifes);
 	
 	gotoxy(70,2);
 	printf("       ");
@@ -165,31 +184,139 @@ void Ship::deleteShip(){
 Mover nave
 */
 void Ship::moveShip(){
+	
 	printHP();
 	
 	if(kbhit()){
-			char key = getch(); //Tecla presionada
-			deleteShip();
-			//se evaluan los casos
-			if(key == 'e'){
-				hp--;
-			}
-			if(key == left && x>3){
-				x--;
-			}
-			if(key == right && x+6 < 77){
-				x++;
-			}
-			
-			if(key == up && y>4){
-				y--;
-			}
-			if(key == down && y+3 <33){
-				y++;
-			}
-			
-			printShip();
+		char key = getch(); //Tecla presionada
+		deleteShip();
+		//se evaluan los casos
+		if(key == left && x>3){
+			x--;
 		}
+		if(key == right && x+6 <77){
+			x++;
+		}
+		
+		if(key == up && y>4){
+			y--;
+		}
+		if(key == down && y+3 <33){
+			y++;
+		}
+		
+		printShip();
+	}
+}
+
+/*
+Clase asteroide
+*/
+class Asteroid{
+	
+	int x,y;
+	
+	public:
+		
+		Asteroid(int x, int y): x(x), y(y){}
+		int X(){return x;};
+		int Y(){return y;};
+		void printAsteroid();
+		void moveAsteroid();
+		void colition(class Ship &S);
+
+};
+
+/*
+Colición del asteroide
+*/
+void Asteroid::colition(class Ship &S){
+	
+	if(x >= S.X() && x < S.X() + 6 && y >= S.Y() && y<= S.Y()+2){
+		
+		S.decreaseHP();
+		
+		S.deleteShip();
+		
+		S.printShip();
+		
+		S.printHP();
+		
+		x = (rand()%71) + 4;
+		y = 4;
+			
+	}
+}
+
+
+/*
+Pintar el asteroide
+*/
+void Asteroid::printAsteroid(){
+	
+	gotoxy(x,y);
+	printf("%c",184);
+	
+}
+
+
+/*
+Mover el asteroide
+*/
+void Asteroid::moveAsteroid(){
+	
+	gotoxy(x,y);
+	printf(" ");
+	y++;
+	
+	if(y>32){
+		x = (rand()%71) + 4;
+		y = 4;
+	}
+	
+	printAsteroid();
+	
+}
+
+/*
+Clase bala
+*/
+class Bullet{
+	int x,y;
+	
+	public:
+		int X() {return x;};
+		int Y() {return y;};
+		Bullet(int x, int y): x(x), y(y){};
+		void moveBullet();
+		bool out();
+};
+
+
+/*
+Mover la bala
+*/
+void Bullet::moveBullet(){
+	gotoxy(x,y); printf(" ");
+	
+	if(y > 4){
+		y--;	
+	}
+	
+	gotoxy(x,y); printf("%c", 219);
+}
+
+
+/*
+Comprobar si la bala llega al borde de la pantalla
+*/
+bool Bullet::out(){
+	if(y == 4) {
+		return true;
+	}
+	else{
+		return false;	
+	}
 }
 
 
@@ -202,22 +329,84 @@ int main(){
 	printLimits(); //Marco
 	Ship ship(38,30,3,3); //Inicialización de la nave
 	
+	list<Asteroid* > asteroid;
+	list<Asteroid*>:: iterator ita;
+	
+	
+	for(int i = 0; i<5 ; i++){
+		asteroid.push_back(new Asteroid(rand()%75 + 4, 4));
+	}
+	
+	list<Bullet*> bullet;
+	
+	list<Bullet*>:: iterator itb;
+	
 	ship.printShip();
+	
+	int score = 0;
 	
 	bool gameOver = false;
 	
 	while(!gameOver){
 		
-		ship.moveShip();
+		gotoxy(5,2);
+		printf("Score: ", score);
 		
-		if(ship.hp == 0){
-			ship.died();
-			ship.lifes--;
+		if(kbhit()){
+			char key = getch();
+			
+			if(key == 'a'){
+				bullet.push_back(new Bullet(ship.X()+ 2, ship.Y()-1));
+			}
+		}
+		for(itb = bullet.begin(); itb != bullet.end(); itb++){
+					
+			(*itb)->moveBullet();
+			
+			if((*itb)->out()){
+				gotoxy((*itb)->X(), (*itb)->Y());
+				printf(" ");
+				delete(*itb);
+				itb = bullet.erase(itb);
+			}
 		}
 		
+		for(ita = asteroid.begin(); ita != asteroid.end(); ita++){
+			(*ita)->moveAsteroid();
+			(*ita)->colition(ship);
+		}
+		
+		for(ita = asteroid.begin();ita != asteroid.end(); ita++){
+			for(itb = bullet.begin(); itb != bullet.end();itb++){
+				if(((*ita)->X() == (*itb)->X() && ((*ita)->Y()+1 == (*itb)->Y()) || (*ita)->Y() == (*itb)->Y())){
+					gotoxy((*itb)->X(), (*itb)->Y());
+					printf(" ");
+					delete(*itb);
+					itb = bullet.erase(itb);
+					
+					asteroid.push_back(new Asteroid(rand()%75 + 4, 4));
+					gotoxy((*ita)->X(), (*ita)->Y());
+					printf(" ");
+					delete(*ita);
+					ita = asteroid.erase(ita);
+					
+					score+=5;
+				}
+			}
+		}
+		
+		gotoxy(5,2);
+		printf("Score: ", score);
+		
+		ship.died();
+		ship.moveShip();
 		Sleep(30);
 		
+		if(ship.getLifes() == 0){
+			gameOver = true;
+		}
 	}
 	
-	return 0;
+	return 999;
+	
 }
